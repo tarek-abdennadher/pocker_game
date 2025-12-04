@@ -121,7 +121,7 @@ public class HandServiceImpl implements HandService {
     /**
      * <p>
      * process handPairMap to keep only hands with highest Pair
-     * if many hands with same highest pair then move to the next highest pair
+     * if many hands with the same highest pair then move to the next highest pair
      * if all pairs are equal then return them all
      * </p>
      *
