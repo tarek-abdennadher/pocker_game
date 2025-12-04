@@ -60,14 +60,14 @@ public class HandServiceImpl implements HandService {
         return new Hand(hand.id(), sorted.get(0), sorted.get(1), sorted.get(2), sorted.get(3), sorted.get(4));
     }
 
-    public Optional<Hand> getHandById(UUID id, List<Hand> hands) {
+    private Optional<Hand> getHandById(UUID id, List<Hand> hands) {
         return hands.stream()
                 .filter(hand -> hand.id().equals(id))
                 .findFirst();
     }
 
     @Override
-    public Hand getHandWithHighestCard(List<Hand> hands) {
+    public Optional<Hand> getHandWithHighestCard(List<Hand> hands) {
         Map<Hand, List<Card>> handCardsMap = hands.stream()
                 .map(this::sortHandCardsAsc)
                 .collect(Collectors.toMap(Function.identity(), Hand::getCards));
@@ -88,10 +88,10 @@ public class HandServiceImpl implements HandService {
                     ));
         }
 
-        return handCardsMap.keySet().stream()
+        return handCardsMap.size() == 1 ? handCardsMap.keySet().stream()
                 .findFirst()
-                .map(highestHand -> getHandById(highestHand.id(), hands).get())
-                .orElseThrow();
+                .map(highestHand -> getHandById(highestHand.id(), hands).get()) :
+                Optional.empty();
     }
 
     @Override
@@ -150,13 +150,10 @@ public class HandServiceImpl implements HandService {
             List<CardValue>> handPairMap) {
         handPairMap = processHighestPairMap(handPairMap);
         boolean highestPairFound = handPairMap.size() == 1;
-        if (highestPairFound) {
-            return handPairMap.keySet().stream()
-                    .findFirst()
-                    .map(highestHand -> getHandById(highestHand.id(), hands).get());
-        } else {
-            return Optional.of(getHandWithHighestCard(hands));
-        }
+        return highestPairFound ? handPairMap.keySet().stream()
+                .findFirst()
+                .map(highestHand -> getHandById(highestHand.id(), hands).get()) :
+                getHandWithHighestCard(hands);
     }
 
     @Override
@@ -193,9 +190,12 @@ public class HandServiceImpl implements HandService {
     }
 
     private Optional<Hand> getHandByCriteria(List<Hand> hands, Function<Hand,Optional<CardValue>> fn) {
-        return hands.stream()
+        Map<Integer, Hand> handMap = hands.stream()
                 .filter(hand -> fn.apply(hand).isPresent())
-                .max(Comparator.comparingInt(hand -> fn.apply(hand).get().getValue()));
+                .collect(Collectors.toMap(h-> fn.apply(h).get().getValue(), Function.identity(), (h1,h2)->null));
+        return handMap.entrySet().stream()
+                .max(Comparator.comparingInt(Map.Entry::getKey))
+                .flatMap(entry-> Optional.ofNullable(entry.getValue()));
     }
 
     @Override
@@ -225,7 +225,7 @@ public class HandServiceImpl implements HandService {
                 .allMatch(card -> card.getColor().equals(hand.card1().getColor()));
         List<Hand> handWithFlush = hands.stream().filter(isFlush).toList();
         return handWithFlush.isEmpty() ?
-                Optional.empty() : Optional.of(getHandWithHighestCard(handWithFlush));
+                Optional.empty() : getHandWithHighestCard(handWithFlush);
 
     }
 
@@ -270,18 +270,21 @@ public class HandServiceImpl implements HandService {
     }
 
     @Override
-    public Hand getHandWinningGame(List<Hand> hands) {
+    public String getHandWinningGame(List<Hand> hands) {
         if (!handsCardDistinct(hands)) {
             throw new InputMismatchException("Hands card must be distinct");
         }
-        return getHandWithHighestStraightFlush(hands)
-                .orElse(getHandWithHighestFourOfKind(hands)
-                        .orElse(getHandWithHighestFull(hands)
-                                .orElse(getHandWithHighestFlush(hands)
-                                        .orElse(getHandWithHighestStraight(hands)
-                                                .orElse(getHandWithHighestThreeOfKind(hands)
-                                                        .orElse(getHandWithHighestTwoPair(hands)
-                                                                .orElse(getHandWithHighestPair(hands)
-                                                                        .orElse(getHandWithHighestCard(hands)))))))));
+        Optional<Hand> winningHand = getHandWithHighestStraightFlush(hands)
+                .or(()->getHandWithHighestFourOfKind(hands))
+                .or(()->getHandWithHighestFull(hands))
+                .or(()->getHandWithHighestFlush(hands))
+                .or(()->getHandWithHighestStraight(hands))
+                .or(()->getHandWithHighestThreeOfKind(hands))
+                .or(()->getHandWithHighestTwoPair(hands))
+                .or(()->getHandWithHighestPair(hands))
+                .or(()->getHandWithHighestCard(hands));
+        return winningHand.isPresent() ?
+                String.format("Player with id %s is the winner", winningHand.get().id()) :
+                "draw";
     }
 }

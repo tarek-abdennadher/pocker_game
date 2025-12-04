@@ -1,6 +1,5 @@
 package com.exercice.pocker.service;
 
-import com.exercice.pocker.model.Card;
 import com.exercice.pocker.model.CardValue;
 import com.exercice.pocker.model.Hand;
 
@@ -12,7 +11,7 @@ public interface HandService {
     Boolean handCardDistinct(Hand hand);
     Boolean handsCardDistinct(List<Hand> hands);
     Hand sortHandCardsAsc(Hand hand);
-    Hand getHandWithHighestCard(List<Hand> hands);
+    Optional<Hand> getHandWithHighestCard(List<Hand> hands);
     List<CardValue> getHandPairsValue(Hand hand);
     Optional<Hand> getHandWithHighestPair(List<Hand> hands);
     Optional<Hand> getHandWithHighestTwoPair(List<Hand> hands);
@@ -22,5 +21,5 @@ public interface HandService {
     Optional<Hand> getHandWithHighestFull(List<Hand> hands);
     Optional<Hand> getHandWithHighestFourOfKind(List<Hand> hands);
     Optional<Hand> getHandWithHighestStraightFlush(List<Hand> hands);
-    Hand getHandWinningGame(List<Hand> hands);
+    String getHandWinningGame(List<Hand> hands);
 }

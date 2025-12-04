@@ -106,8 +106,10 @@ public class HandServiceTest {
 
         Hand handHighest = new Hand(UUID.randomUUID(),card1,card2,card3,card4,card5);
         Hand hand2 = new Hand(UUID.randomUUID(),card1,lowestCard,card3,card4,card5);
+        Hand hand3 = new Hand(UUID.randomUUID(),card1,lowestCard,card3,card4,card5);
 
-        Assertions.assertEquals(handHighest, underTest.getHandWithHighestCard(List.of(handHighest,hand2)));
+        Assertions.assertEquals(Boolean.FALSE, underTest.getHandWithHighestCard(List.of(hand2,hand3)).isPresent());
+        Assertions.assertEquals(handHighest, underTest.getHandWithHighestCard(List.of(handHighest,hand2)).get());
     }
 
     @Test
@@ -355,7 +357,30 @@ public class HandServiceTest {
         Hand handHighest = new Hand(UUID.randomUUID(),card1,card2,card3,card4,card5);
         Hand hand2 = new Hand(UUID.randomUUID(),card2_1,card2_2,card2_3,card2_4,card2_5);
 
-        Assertions.assertEquals(handHighest, underTest.getHandWinningGame(List.of(handHighest,hand2)));
+        String expectedWinner = String.format("Player with id %s is the winner", handHighest.id());
+
+        Assertions.assertEquals(expectedWinner, underTest.getHandWinningGame(List.of(handHighest,hand2)));
+    }
+
+    @Test
+    void should_return_draw_for_straight_flush() {
+        Card card1 = new Card(Color.C, CardValue.EIGHT);
+        Card card2 = new Card(Color.C, CardValue.SEVEN);
+        Card card3 = new Card(Color.C, CardValue.NINE);
+        Card card4 = new Card(Color.C, CardValue.JACK);
+        Card card5 = new Card(Color.C, CardValue.TEN);
+        Card card2_1 = new Card(Color.P, CardValue.EIGHT);
+        Card card2_2 = new Card(Color.P, CardValue.SEVEN);
+        Card card2_3 = new Card(Color.P, CardValue.NINE);
+        Card card2_4 = new Card(Color.P, CardValue.JACK);
+        Card card2_5 = new Card(Color.P, CardValue.TEN);
+
+        Hand hand1 = new Hand(UUID.randomUUID(),card1,card2,card3,card4,card5);
+        Hand hand2 = new Hand(UUID.randomUUID(),card2_1,card2_2,card2_3,card2_4,card2_5);
+
+        String expectedResult = "draw";
+
+        Assertions.assertEquals(expectedResult, underTest.getHandWinningGame(List.of(hand1,hand2)));
     }
 
 }
